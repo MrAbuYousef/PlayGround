@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0d20">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-title" content="Pocket Siege">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Pocket Siege — a turn-based cannon duel made for touch. Drag to aim, read the wind, and topple the Crimson keep.">
+<title>Pocket Siege · Turn-Based Cannon Duel</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a0d20'/%3E%3Cpath d='M8 25V12h3V9h3v3h4V9h3v3h3v13H8Z' fill='%235fe3ff'/%3E%3Ccircle cx='16' cy='19' r='3' fill='%230a0d20'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="app">
+  <canvas id="game" role="img" aria-label="A dusk battlefield with an azure keep on the left and a crimson keep on the right."></canvas>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <header class="top">
+    <div class="wordmark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 20V9h2V6h2.2v3h2.1V6h3.4v3h2.1V6H20v14H4Z" fill="currentColor"/><path d="M10 20v-4.6a2 2 0 0 1 4 0V20" fill="#0a0d20"/></svg>
+      <span>Pocket Siege</span>
+    </div>
+
+    <div class="hud">
+      <section class="player-card azure active" id="card0" aria-label="Azure, your keep">
+        <div class="crest" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 21V9h2.2V6h2.4v3h2.3V6h2.2v3h2.3V6h2.4v3H20v12H4Z" fill="currentColor"/><path d="M10 21v-4.4a2 2 0 1 1 4 0V21" fill="#0a0d20"/></svg>
+        </div>
+        <div class="pinfo">
+          <div class="ptop"><span class="pname">Azure</span><span class="ptag">You</span></div>
+          <div class="hpbar" role="progressbar" aria-label="Azure keep health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" id="hpBar0"><i id="hp0"></i></div>
+        </div>
+        <div class="php" id="hpNum0">100</div>
+      </section>
+
+      <div class="center-hud">
+        <div class="wind" id="windChip" title="Wind pushes every shot">
+          <span class="wind-kicker">Wind</span>
+          <svg class="wind-arrow" id="windArrow" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 12h15M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="wind-val" id="windVal">0</span>
+        </div>
+        <div class="round" id="roundLabel">Round 1</div>
+      </div>
+
+      <section class="player-card crimson enemy" id="card1" aria-label="Crimson enemy keep">
+        <div class="crest" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 21V9h2.2V6h2.4v3h2.3V6h2.2v3h2.3V6h2.4v3H20v12H4Z" fill="currentColor"/><path d="M10 21v-4.4a2 2 0 1 1 4 0V21" fill="#0a0d20"/></svg>
+        </div>
+        <div class="pinfo">
+          <div class="ptop"><span class="pname">Crimson</span><span class="ptag">CPU</span></div>
+          <div class="hpbar" role="progressbar" aria-label="Crimson keep health" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100" id="hpBar1"><i id="hp1"></i></div>
+        </div>
+        <div class="php" id="hpNum1">100</div>
+      </section>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" aria-live="polite">
+    <strong id="bannerTitle">Your turn</strong>
+    <span id="bannerSub">Drag back from the cannon · release to fire</span>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <div id="hint" class="hint" aria-live="polite">
+    <span class="hint-dot" aria-hidden="true"></span>
+    <span id="hintText">Drag back to aim · release to fire</span>
+  </div>
+
+  <div class="controls">
+    <button id="tiltBtn" class="tool" type="button" aria-pressed="false" aria-label="Enable optional tilt aiming">
+      <span class="tool-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="6.5" y="3.5" width="11" height="17" rx="3" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/><path d="M9.6 17.6h4.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </span>
+      <span class="tool-label" id="tiltLabel">Tilt aim</span>
+      <span class="status-dot" id="tiltDot" aria-hidden="true"></span>
+    </button>
+
+    <div class="tools">
+      <button id="helpBtn" class="tool icon-only" type="button" aria-label="How to play">
+        <span class="tool-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9.2 9.1a2.9 2.9 0 1 1 4.2 2.6c-.9.5-1.4 1-1.4 2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="17.5" r="1.15" fill="currentColor"/></svg>
+        </span>
+      </button>
+      <button id="soundBtn" class="tool icon-only" type="button" aria-pressed="true" aria-label="Mute sound">
+        <span class="tool-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 9.5v5h3.2l4.4 3.6V5.9L7.2 9.5H4Z" fill="currentColor"/><path class="sound-waves" d="M15.2 9.2a4 4 0 0 1 0 5.6M17.8 6.8a7.4 7.4 0 0 1 0 10.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="sound-slash" d="M15.5 9.5l5 5m0-5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <div id="help" class="modal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <button class="sheet-close" id="helpCloseX" type="button" aria-label="Close instructions">×</button>
+      <p class="eyebrow">Field manual</p>
+      <h2 id="helpTitle">How to play</h2>
+      <p class="lede">Topple the Crimson keep before it topples yours. One shot per turn.</p>
+      <div class="how">
+        <div class="how-item">
+          <span class="step" aria-hidden="true">1</span>
+          <div><strong>Drag back to aim</strong><p>Pull back from your cannon to set the angle and power. Release to fire.</p></div>
+        </div>
+        <div class="how-item">
+          <span class="step" aria-hidden="true">2</span>
+          <div><strong>Read the wind</strong><p>Wind pushes every shot. The dotted arc shows your predicted path.</p></div>
+        </div>
+        <div class="how-item">
+          <span class="step" aria-hidden="true">3</span>
+          <div><strong>Tilt for fine aim</strong><p>Optional. Tap <b>Tilt aim</b> and tilt your device. On iPhone and iPad, iOS asks for motion permission the first time you enable it.</p></div>
+        </div>
+      </div>
+      <p class="fineprint">Keyboard: ↑ ↓ angle · ← → power · Space fires</p>
+      <button id="helpClose" class="primary" type="button">Got it</button>
+    </div>
+  </div>
+
+  <div id="over" class="overlay" hidden>
+    <div class="result" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
+      <div class="result-crest" id="resultCrest" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 21V9h2.2V6h2.4v3h2.3V6h2.2v3h2.3V6h2.4v3H20v12H4Z" fill="currentColor"/><path d="M10 21v-4.4a2 2 0 1 1 4 0V21" fill="#0a0d20"/></svg>
+      </div>
+      <p class="eyebrow" id="resultEyebrow">Duel complete</p>
+      <h2 id="resultTitle">Victory</h2>
+      <p class="lede" id="resultSub">The Crimson keep has fallen.</p>
+      <div class="stats">
+        <div><strong id="statShots">0</strong><span>Shots</span></div>
+        <div><strong id="statHits">0</strong><span>Hits</span></div>
+        <div><strong id="statAcc">0%</strong><span>Accuracy</span></div>
+      </div>
+      <button id="againBtn" class="primary" type="button">Play again</button>
+    </div>
+  </div>
+
+  <noscript><p class="noscript">Pocket Siege needs JavaScript enabled to play.</p></noscript>
+</main>
+<script src="game.js"></script>
+</body>
+</html>
